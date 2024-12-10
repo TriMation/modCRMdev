@@ -24,7 +24,11 @@ export function SettingsPage() {
           </div>
         );
       case 'subscription':
-        return <Subscription />;
+        return (
+          <div className="space-y-6">
+            <Subscription />
+          </div>
+        );
       case 'activity':
         return <RecentActivity />;
       case 'data':
