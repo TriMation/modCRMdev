@@ -3,7 +3,7 @@ import { Plus, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Opportunity } from '../types/opportunity';
-import { getOpportunities } from '../services/opportunityService';
+import { getOpportunities, getOpportunityStages } from '../services/opportunityService';
 import { OpportunityList } from '../components/opportunities/OpportunityList';
 import { OpportunityKanban } from '../components/opportunities/OpportunityKanban';
 import { OpportunityFilters } from '../components/opportunities/OpportunityFilters';
@@ -20,6 +20,7 @@ export function OpportunitiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [stages, setStages] = useState<{ id: string; name: string; color: string }[]>([]);
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [showNewOpportunityForm, setShowNewOpportunityForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -32,8 +33,19 @@ export function OpportunitiesPage() {
   const loadOpportunities = async () => {
     try {
       if (!user) return;
-      const oppsData = await getOpportunities();
+      const [oppsData, stagesData] = await Promise.all([
+        getOpportunities(),
+        getOpportunityStages()
+      ]);
       setOpportunities(oppsData);
+      setStages(stagesData.map(stage => ({
+        ...stage,
+        color: stage.name.toLowerCase().includes('won') ? 'emerald' :
+               stage.name.toLowerCase().includes('lost') ? 'red' :
+               stage.name.toLowerCase().includes('negotiation') ? 'purple' :
+               stage.name.toLowerCase().includes('proposal') ? 'orange' :
+               stage.name.toLowerCase().includes('qualification') ? 'yellow' : 'blue'
+      })));
     } catch (err) {
       setError('Failed to load opportunities');
       console.error('Error loading opportunities:', err);
@@ -152,6 +164,7 @@ export function OpportunitiesPage() {
             ) : (
               <OpportunityKanban
                 opportunities={filteredOpportunities}
+                stages={stages}
                 onOpportunitySelect={(opp) => navigate(`/dashboard/opportunities/${opp.id}`)}
                 selectedOpportunityId={selectedOpportunity?.id}
                 onOpportunityUpdate={loadOpportunities}

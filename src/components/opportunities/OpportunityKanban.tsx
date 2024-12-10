@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { DollarSign, User, Calendar, Building2 } from 'lucide-react';
 import { Opportunity } from '../../types/opportunity';
 import { updateOpportunityStage } from '../../services/opportunityService';
 
 interface OpportunityKanbanProps {
   opportunities: Opportunity[];
-  stages: { id: string; name: string }[];
+  stages: { id: string; name: string; color: string }[];
   onOpportunitySelect: (opportunity: Opportunity) => void;
   selectedOpportunityId?: string;
   onOpportunityUpdate?: () => void;
 }
 
-export function OpportunityKanban({ 
-  opportunities, 
-  stages, 
-  onOpportunitySelect, 
+export function OpportunityKanban({
+  opportunities,
+  stages,
+  onOpportunitySelect,
   selectedOpportunityId,
-  onOpportunityUpdate 
+  onOpportunityUpdate
 }: OpportunityKanbanProps) {
   const [draggedOpportunity, setDraggedOpportunity] = useState<Opportunity | null>(null);
 
@@ -45,9 +45,7 @@ export function OpportunityKanban({
     if (draggedOpportunity && draggedOpportunity.stage_id !== stageId) {
       try {
         await updateOpportunityStage(draggedOpportunity.id, stageId);
-        if (onOpportunityUpdate) {
-          onOpportunityUpdate();
-        }
+        onOpportunityUpdate?.();
       } catch (err) {
         console.error('Error updating opportunity stage:', err);
       }
@@ -55,28 +53,13 @@ export function OpportunityKanban({
     setDraggedOpportunity(null);
   };
 
-  const getStageColor = (stage: string) => {
-    switch (stage.toLowerCase()) {
-      case 'prospecting':
-        return 'bg-blue-50 dark:bg-blue-900/20';
-      case 'qualification':
-        return 'bg-yellow-50 dark:bg-yellow-900/20';
-      case 'proposal':
-        return 'bg-orange-50 dark:bg-orange-900/20';
-      case 'negotiation':
-        return 'bg-purple-50 dark:bg-purple-900/20';
-      case 'closed won':
-        return 'bg-emerald-50 dark:bg-emerald-900/20';
-      case 'closed lost':
-        return 'bg-red-50 dark:bg-red-900/20';
-      default:
-        return 'bg-gray-50 dark:bg-gray-900/20';
-    }
+  const getStageColor = (color: string) => {
+    return `bg-${color}-50 dark:bg-${color}-900/20`;
   };
 
   return (
-    <div className="h-full overflow-x-auto">
-      <div className="inline-flex h-full space-x-3 p-4 min-w-max bg-emerald-50/50 dark:bg-gray-800/50">
+    <div className="h-full overflow-x-auto max-w-full">
+      <div className="inline-flex h-full space-x-4 p-4">
         {stages.map(stage => {
           const stageOpportunities = opportunities.filter(opp => opp.stage_id === stage.id);
           const totalValue = stageOpportunities.reduce((sum, opp) => sum + opp.value, 0);
@@ -84,23 +67,21 @@ export function OpportunityKanban({
           return (
             <div 
               key={stage.id} 
-              className="w-72 flex-shrink-0 flex flex-col"
+              className="w-72 flex-shrink-0 flex flex-col bg-white dark:bg-gray-800 rounded-lg p-4"
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(stage.id, e)}
             >
-              <div className="mb-3">
-                <div className="px-3 py-2 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm text-emerald-900 dark:text-emerald-100">
-                      {stage.name}
-                    </span>
-                    <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                      {stageOpportunities.length}
-                    </span>
-                  </div>
-                  <div className="text-xs mt-1 text-emerald-600 dark:text-emerald-400">
-                    ${totalValue.toLocaleString()}
-                  </div>
+              <div className={`mb-4 p-4 rounded-lg ${getStageColor(stage.color)}`}>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-emerald-900 dark:text-emerald-100">
+                    {stage.name}
+                  </span>
+                  <span className="text-sm text-emerald-600 dark:text-emerald-400">
+                    {stageOpportunities.length}
+                  </span>
+                </div>
+                <div className="text-sm mt-1 text-emerald-600 dark:text-emerald-400">
+                  ${totalValue.toLocaleString()}
                 </div>
               </div>
 
