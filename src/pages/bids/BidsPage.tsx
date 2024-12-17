@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getBids, createBid } from '../../services/bidService';
+import { getBids, createBid, deleteBid } from '../../services/bidService';
 import { BidRecordsList } from '../../components/bids/BidRecordsList';
 import { Bid } from '../../types/bid';
 import { Breadcrumbs } from '../../components/common/Breadcrumbs';
@@ -82,13 +82,38 @@ export function BidsPage() {
   const handleFilterChange = (filterType: string, value: string) => {
     setSelectedFilters((prev) => {
       const newFilters = { ...prev };
-      if (prev[filterType as keyof typeof prev] === value) {
-        delete newFilters[filterType as keyof typeof prev];
+      
+      // Special handling for submission date filter
+      if (filterType === 'submissionDate') {
+        const today = new Date();
+        const submissionDate = new Date(value);
+        
+        // Compare dates properly
+        if (submissionDate >= today) {
+          newFilters.submissionDate = value;
+        }
       } else {
-        newFilters[filterType as keyof typeof prev] = value;
+        if (prev[filterType as keyof typeof prev] === value) {
+          delete newFilters[filterType as keyof typeof prev];
+        } else {
+          newFilters[filterType as keyof typeof prev] = value;
+        }
       }
+      
       return newFilters;
     });
+  };
+  const handleDeleteBid = async (bid: Bid) => {
+    try {
+      await deleteBid(bid.id);
+      await loadBids();
+      if (selectedBid?.id === bid.id) {
+        setSelectedBid(null);
+      }
+    } catch (err) {
+      setError('Failed to delete bid');
+      console.error('Error deleting bid:', err);
+    }
   };
 
   const filteredBids = bids
@@ -229,6 +254,7 @@ export function BidsPage() {
             bids={bids}
             selectedFilters={selectedFilters}
             onFilterChange={handleFilterChange}
+            onDeleteBid={handleDeleteBid}
           />
         )}
 
@@ -238,6 +264,7 @@ export function BidsPage() {
               bids={filteredBids}
               onBidSelect={setSelectedBid}
               selectedBidId={selectedBid?.id}
+              onDeleteBid={handleDeleteBid}
             />
           </div>
 

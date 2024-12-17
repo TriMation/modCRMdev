@@ -220,3 +220,20 @@ export async function getBidSection(bidId: string, sectionType: BidSection['sect
     throw error;
   }
 }
+
+export async function deleteBid(id: string) {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user?.id) throw new Error('No authenticated user');
+
+    const { error } = await supabase
+      .from('bids')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting bid:', error);
+    throw error;
+  }
+}

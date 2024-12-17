@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { Bid } from '../../types/bid';
 
 interface BidRecordsListProps {
   bids: Bid[];
   onBidSelect: (bid: Bid) => void;
   selectedBidId?: string;
+  onDeleteBid?: (bid: Bid) => void;
 }
 
-export function BidRecordsList({ bids, onBidSelect, selectedBidId }: BidRecordsListProps) {
+export function BidRecordsList({ bids, onBidSelect, selectedBidId, onDeleteBid }: BidRecordsListProps) {
   const [expandedBids, setExpandedBids] = useState<Record<string, boolean>>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  
+  // Only show first 4 bids
+  const visibleBids = bids.slice(0, 4);
 
   const toggleExpand = (bidId: string) => {
     setExpandedBids(prev => ({
@@ -27,8 +32,8 @@ export function BidRecordsList({ bids, onBidSelect, selectedBidId }: BidRecordsL
   }
 
   return (
-    <div className="space-y-2">
-      {bids.map((bid) => (
+    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+      {visibleBids.map((bid) => (
         <div
           key={bid.id}
           className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm transition-all ${
@@ -73,6 +78,17 @@ export function BidRecordsList({ bids, onBidSelect, selectedBidId }: BidRecordsL
                 }`}>
                   {bid.bid_no_bid_decision === true ? 'Bid' : bid.bid_no_bid_decision === false ? 'No-Bid' : 'Pending'}
                 </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onDeleteBid) {
+                      setShowDeleteConfirm(bid.id);
+                    }
+                  }}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -109,6 +125,40 @@ export function BidRecordsList({ bids, onBidSelect, selectedBidId }: BidRecordsL
           )}
         </div>
       ))}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-emerald-900 dark:text-emerald-100 mb-4">
+              Delete Bid
+            </h3>
+            <p className="text-emerald-600 dark:text-emerald-400 mb-6">
+              Are you sure you want to delete this bid? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="px-4 py-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-gray-700 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const bid = bids.find(b => b.id === showDeleteConfirm);
+                  if (bid) {
+                    onDeleteBid?.(bid);
+                  }
+                  setShowDeleteConfirm(null);
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
