@@ -8,18 +8,7 @@ export async function getBids() {
 
     const { data, error } = await supabase
       .from('bids')
-      .select(`
-        *,
-        bid_team_members (
-          *,
-          user:users (
-            first_name,
-            last_name,
-            email
-          )
-        ),
-        bid_sections (*)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -38,16 +27,27 @@ export async function getBid(id: string) {
     const { data, error } = await supabase
       .from('bids')
       .select(`
-        *,
-        bid_team_members (
-          *,
-          user:users (
-            first_name,
-            last_name,
-            email
-          )
+        id,
+        title,
+        bid_number,
+        release_date,
+        submission_date,
+        award_date,
+        status,
+        word_count,
+        win_strategy,
+        bid_no_bid_date,
+        bid_no_bid_decision,
+        bid_no_bid_rationale,
+        owner_id,
+        created_at,
+        updated_at,
+        bid_team_members!inner (
+          id, user_id, role, responsibilities
         ),
-        bid_sections (*)
+        bid_sections!inner (
+          id, section_type, content, status
+        )
       `)
       .eq('id', id)
       .single();
@@ -63,7 +63,12 @@ export async function getBid(id: string) {
 export async function createBid(bid: Omit<Bid, 'id' | 'created_at' | 'updated_at'>) {
   try {
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user?.id) throw new Error('No authenticated user');
+    if (!userData?.user) throw new Error('No authenticated user');
+
+    // Validate required fields
+    if (!bid.submission_date) {
+      throw new Error('Submission date is required');
+    }
 
     const { data, error } = await supabase
       .from('bids')
