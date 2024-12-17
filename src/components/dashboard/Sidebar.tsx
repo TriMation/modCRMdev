@@ -1,113 +1,84 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Calendar, Settings, FolderKanban, Building2, ChevronLeft, ChevronRight, CheckSquare, Target, Package, DollarSign } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { useSidebar } from '../../contexts/SidebarContext';
-import { getQuickAccessRecords } from '../../services/quickAccessService';
-import { QuickAccessRecord } from '../../types/quickAccess';
+import { useMenu } from '../../contexts/MenuContext';
+import { Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SidebarLogo } from './SidebarLogo';
+import { SidebarDropdown } from './SidebarDropdown';
+import { SidebarMenu } from './SidebarMenu';
+import { Link } from 'react-router-dom';
 
 export function Sidebar() {
   const location = useLocation();
   const { isCollapsed, toggleSidebar } = useSidebar();
-  const [quickAccessRecords, setQuickAccessRecords] = useState<QuickAccessRecord[]>([]);
+  const { sections, selectedSection, setSelectedSection, loading, error } = useMenu();
 
-  useEffect(() => {
-    async function loadQuickAccess() {
-      const records = await getQuickAccessRecords();
-      setQuickAccessRecords(records);
-    }
-    loadQuickAccess();
-  }, [location.pathname]);
+  if (loading) {
+    return (
+      <div className="bg-emerald-50 dark:bg-gray-800 p-4">
+        <div className="animate-pulse">Loading menu...</div>
+      </div>
+    );
+  }
 
-  const navigationLinks = [
-    { icon: <FolderKanban />, text: 'Dashboard', to: '/dashboard' },
-    { icon: <CheckSquare />, text: 'Tasks', to: '/dashboard/tasks' },
-    { icon: <Calendar />, text: 'Calendar', to: '/dashboard/calendar' },
-    { icon: <Target />, text: 'Leads', to: '/dashboard/leads' },
-    { icon: <DollarSign />, text: 'Opportunities', to: '/dashboard/opportunities' },
-    { icon: <Building2 />, text: 'Accounts', to: '/dashboard/accounts' },
-    { icon: <Users />, text: 'Contacts', to: '/dashboard/contacts' },
-    { icon: <Package />, text: 'Products', to: '/dashboard/products' },
-    { icon: <Settings />, text: 'Settings', to: '/dashboard/settings' }
-  ];
+  if (error) {
+    return (
+      <div className="bg-emerald-50 dark:bg-gray-800 p-4">
+        <div className="text-red-600">{error}</div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`bg-emerald-50 dark:bg-gray-800 border-r border-emerald-100 dark:border-gray-700 transition-all duration-300 ${
+    <div className={`flex flex-col bg-emerald-50 dark:bg-gray-800 border-r border-emerald-100 dark:border-gray-700 transition-all duration-300 ${
       isCollapsed ? 'w-20' : 'w-64'
     }`}>
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-8">
-          <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
-            <FolderKanban className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-            {!isCollapsed && <span className="ml-2 text-xl font-semibold text-emerald-800 dark:text-emerald-200">modCRM</span>}
-          </div>
+      <div className="flex-1 p-4 relative">
+        <div className="flex items-center justify-between mb-6">
+          <SidebarLogo />
           <button
             onClick={toggleSidebar}
-            className="p-2 hover:bg-emerald-100 dark:hover:bg-gray-700 rounded-lg text-emerald-600 dark:text-emerald-400"
+            className="p-2 rounded-lg hover:bg-emerald-100 dark:hover:bg-gray-700 text-emerald-600 dark:text-emerald-400 transition-colors"
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {isCollapsed ? (
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4" />
             ) : (
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             )}
           </button>
         </div>
-
-        <nav className="space-y-2">
-          {navigationLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={`flex items-center ${
-                isCollapsed ? 'justify-center' : 'space-x-2'
-              } px-4 py-2 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-gray-700 transition-colors ${
-                location.pathname === link.to ? 'bg-emerald-100 dark:bg-gray-700' : ''
-              }`}
-            >
-              <span className="w-5 h-5">{link.icon}</span>
-              {!isCollapsed && <span>{link.text}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        <hr className="my-4 border-emerald-100 dark:border-gray-700" />
-        <div className={`${isCollapsed ? 'px-2' : 'px-4'} mb-2`}>
-          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-            {!isCollapsed && 'Quick Access'}
-          </span>
-        </div>
-        {quickAccessRecords.length > 0 ? (
-          <div className="space-y-2">
-            <div className="space-y-2">
-              {quickAccessRecords.map((record) => (
-                <Link
-                  key={`${record.type}-${record.id}`}
-                  to={record.path}
-                  className={`flex items-center ${
-                    isCollapsed ? 'justify-center' : 'space-x-2'
-                  } px-4 py-2 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-gray-700 transition-colors`}
-                >
-                  <span className="w-5 h-5">
-                    {record.type === 'account' ? <Building2 className="w-5 h-5" /> : <Users className="w-5 h-5" />}
-                  </span>
-                  {!isCollapsed && (
-                    <div className="flex-1 truncate">
-                      <span className="block text-sm truncate">{record.name}</span>
-                      <span className="block text-xs text-emerald-500 dark:text-emerald-500">
-                        {new Date(record.accessed_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className={`px-4 py-3 ${isCollapsed ? 'hidden' : ''}`}>
-            <p className="text-sm text-emerald-500 dark:text-emerald-400">
-              Visit accounts and contacts to build your quick access list
-            </p>
+        
+        {!isCollapsed && selectedSection && (
+          <div className="mb-4">
+            <SidebarDropdown 
+              sections={sections}
+              selectedSection={selectedSection}
+              onSectionChange={setSelectedSection}
+            />
           </div>
         )}
+
+        {selectedSection && selectedSection.items && (
+          <SidebarMenu
+            items={selectedSection.items}
+            currentPath={location.pathname}
+            isCollapsed={isCollapsed}
+          />
+        )}
+      </div>
+      <div className="p-4 border-t border-emerald-100 dark:border-gray-700">
+        <Link
+          to="/dashboard/settings"
+          className={`flex items-center ${
+            isCollapsed ? 'justify-center' : 'space-x-2'
+          } px-4 py-2 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-gray-700 transition-colors ${
+            location.pathname === '/dashboard/settings' ? 'bg-emerald-100 dark:bg-gray-700' : ''
+          }`}
+        >
+          <Settings className="w-5 h-5" />
+          {!isCollapsed && <span>Settings</span>}
+        </Link>
       </div>
     </div>
   );
