@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AccountsPage } from './pages/AccountsPage';
+import { BidsPage } from './pages/bids/BidsPage';
 import { NewAccountPage } from './pages/NewAccountPage';
 import { EditAccountPage } from './pages/EditAccountPage';
 import { AccountDetailPage } from './pages/AccountDetailPage';
@@ -160,6 +161,14 @@ export default function App() {
                   <PrivateRoute>
                     <DashboardLayout>
                       <SettingsPage />
+                    </DashboardLayout>
+                  </PrivateRoute>
+                } />
+
+                <Route path="/dashboard/bids" element={
+                  <PrivateRoute>
+                    <DashboardLayout>
+                      <BidsPage />
                     </DashboardLayout>
                   </PrivateRoute>
                 } />
