@@ -4,12 +4,10 @@ import { Building2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { loginAsDemo } from '../utils/demoLogin';
 
-import { useMenu } from '../contexts/MenuContext';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const { signIn } = useAuth();
-  const { setSelectedSectionName } = useMenu();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,11 +16,9 @@ export function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { setSelectedSectionName } = useMenu();
       setError('');
       setLoading(true);
       await signIn(email, password);
-      setSelectedSectionName('sales');
       navigate('/dashboard');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in. Please check your credentials.';
@@ -35,11 +31,9 @@ export function LoginPage() {
 
   const handleDemoLogin = async () => {
     try {
-      const { setSelectedSectionName } = useMenu();
       setError('');
       setLoading(true);
       await loginAsDemo();
-      setSelectedSectionName('sales');
       navigate('/dashboard');
     } catch (err) {
       setError('Failed to login as demo user.');

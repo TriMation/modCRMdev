@@ -50,7 +50,7 @@ const menuItems: MenuItem[] = [
 export function TopMenu() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { selectedSection, setSelectedSection, selectedSectionName, setSelectedSectionName } = useMenu();
+  const { selectedSection, setSelectedSection } = useMenu();
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const [searchTerm, setSearchTerm] = React.useState('');
 
@@ -61,6 +61,9 @@ export function TopMenu() {
 
     async function setInitialSection() {
       try {
+        // Get persisted section from localStorage
+        const persistedSection = localStorage.getItem('selectedMenuSection');
+
         const { data: sections } = await supabase
           .from('menu_sections')
           .select('*')
@@ -68,40 +71,62 @@ export function TopMenu() {
           .order('order_position');
 
         if (sections && sections.length > 0) {
-          const matchingItem = menuItems.find(item => 
-            currentPath.startsWith(item.path) || 
-            (item.defaultPath && currentPath === item.defaultPath)
-          );
+          let sectionToSet;
 
-          if (matchingItem) {
-            const section = sections.find(s => s.name === matchingItem.sectionName);
-            if (section && isMounted && (!selectedSection || selectedSection.id !== section.id)) {
-              setSelectedSection(section);
+          if (persistedSection) {
+            // Use persisted section if available
+            const parsed = JSON.parse(persistedSection);
+            sectionToSet = sections.find((s) => s.name === parsed.name);
+          } else {
+            // Otherwise use path matching
+            const matchingItem = menuItems.find((item) => 
+              currentPath.startsWith(item.path) || 
+              (item.defaultPath && currentPath === item.defaultPath)
+            );
+            if (matchingItem) {
+              sectionToSet = sections.find((s) => s.name === matchingItem.sectionName);
             }
+          }
+
+          if (sectionToSet && isMounted && (!selectedSection || selectedSection.id !== sectionToSet.id)) {
+            setSelectedSection(sectionToSet);
+            localStorage.setItem('selectedMenuSection', JSON.stringify({
+              name: sectionToSet.name,
+              id: sectionToSet.id
+            }));
           }
         }
       } catch (err) {
         console.error('Error setting initial section:', err);
+      } finally {
+        if (isMounted) {
+          // Any cleanup if needed
+        }
       }
     }
+
     setInitialSection();
+
     return () => {
       isMounted = false;
     };
-  }, [location.pathname, selectedSection]);
+  }, [location.pathname, selectedSection, setSelectedSection]);
+
   const handleMenuClick = async (item: MenuItem) => {
     try {
-      setSelectedSectionName(item.sectionName);
       const { data: sections } = await supabase
         .from('menu_sections')
         .select('*')
         .eq('name', item.sectionName)
         .eq('active', true)
-        .order('order_position')
         .single();
 
       if (sections) {
         setSelectedSection(sections);
+        localStorage.setItem('selectedMenuSection', JSON.stringify({
+          name: sections.name,
+          id: sections.id
+        }));
         navigate(item.defaultPath || item.path);
       } else {
         console.error('Section not found:', item.sectionName);
@@ -122,7 +147,7 @@ export function TopMenu() {
                 key={item.id}
                 onClick={() => handleMenuClick(item)}
                 className={`flex items-center px-3 py-2 text-sm font-medium transition-all duration-300 ease-in-out
-                  ${selectedSectionName === item.sectionName
+                  ${selectedSection?.name === item.sectionName
                     ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500'
                     : 'text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-gray-700'
                   }

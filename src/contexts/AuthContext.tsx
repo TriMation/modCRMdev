@@ -69,6 +69,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      // Clear first login flag on sign in
+      localStorage.removeItem('hasLoggedIn');
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -94,6 +97,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // Clear menu selection on sign out
+    localStorage.removeItem('selectedMenuSection');
+    localStorage.removeItem('hasLoggedIn');
+    
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };

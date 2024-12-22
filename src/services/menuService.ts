@@ -34,11 +34,12 @@ export async function getMenuItems(sectionId: string): Promise<MenuItem[]> {
         order_position,
         parent_id
       `)
-      .eq('section_id', sectionId)
+      .eq('section_id', sectionId) 
       .eq('active', true)
       .order('order_position');
 
     if (error) throw error;
+
     return items?.map(item => ({
       ...item,
       children: []

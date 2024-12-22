@@ -2,8 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import * as Icons from 'lucide-react';
 import { MenuItem } from '../../types/menu';
-import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
 
 interface SidebarMenuProps {
   items: MenuItem[];
@@ -12,21 +10,10 @@ interface SidebarMenuProps {
 }
 
 export function SidebarMenu({ items, currentPath, isCollapsed }: SidebarMenuProps) {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Set default selection to dashboard on mount
-    if (currentPath === '/dashboard') {
-      const dashboardItem = items.find(item => item.path === '/dashboard');
-      if (dashboardItem) {
-        navigate(dashboardItem.path);
-      }
-    }
-  }, [items]);
-
   const renderMenuItem = (item: MenuItem) => {
     const Icon = item.icon ? Icons[item.icon as keyof typeof Icons] || Icons.Circle : Icons.Circle;
-    const isActive = currentPath.startsWith(item.path);
+    const isActive = currentPath === item.path || 
+      (item.path !== '/dashboard' && currentPath.startsWith(item.path));
     
     // Don't render Settings menu item as it's now handled separately
     if (item.path === '/dashboard/settings') {
