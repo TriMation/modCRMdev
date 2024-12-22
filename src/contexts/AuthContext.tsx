@@ -68,43 +68,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    // Demo user can bypass email verification
-    if (email === DEMO_CREDENTIALS.email) {
+    try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       if (error) throw error;
       
-      // Update demo user's status
+      // Update user's last login time
       const { error: updateError } = await supabase
         .from('users')
         .update({ 
-          last_login: new Date().toISOString()
+          last_login: new Date().toISOString(),
+          email_verified: email === DEMO_CREDENTIALS.email ? true : false
         })
         .eq('email', email);
         
-      if (updateError) console.error('Error updating demo user:', updateError);
+      if (updateError) console.error('Error updating user:', updateError);
       
       return data.user;
+    } catch (error) {
+      console.error('Error signing in:', error);
+      throw error;
     }
-
-    // For regular users, check email verification
-    const { data: { user }, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    if (error) throw error;
-    
-    // Update last login time
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ last_login: new Date().toISOString() })
-      .eq('email', email);
-      
-    if (updateError) console.error('Error updating last login:', updateError);
-    
-    return user;
   };
 
   const signOut = async () => {

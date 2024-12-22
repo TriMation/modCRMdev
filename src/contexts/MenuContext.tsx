@@ -5,7 +5,9 @@ import { getMenuSections, getMenuItems } from '../services/menuService';
 interface MenuContextType {
   sections: MenuSection[];
   selectedSection: MenuSection | null;
+  selectedSectionName: string;
   setSelectedSection: (section: MenuSection) => void;
+  setSelectedSectionName: (name: string) => void;
   loading: boolean;
   error: string | null;
 }
@@ -15,6 +17,7 @@ const MenuContext = createContext<MenuContextType | undefined>(undefined);
 export function MenuProvider({ children }: { children: React.ReactNode }) {
   const [sections, setSections] = useState<MenuSection[]>([]);
   const [selectedSection, setSelectedSection] = useState<MenuSection | null>(null);
+  const [selectedSectionName, setSelectedSectionName] = useState<string>('sales');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,8 +26,12 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
       try {
         const data = await getMenuSections();
         setSections(data);
+
         if (data.length > 0) {
-          setSelectedSection(data[0]); // Default to first section
+          const salesSection = data.find(s => s.name === selectedSectionName);
+          if (salesSection) {
+            setSelectedSection(salesSection);
+          }
         }
       } catch (err) {
         setError('Failed to load menu sections');
@@ -33,16 +40,16 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     }
-    loadMenuSections();
+    void loadMenuSections();
   }, []);
 
   useEffect(() => {
     async function loadMenuItems() {
-      if (!selectedSection) return;
+      if (!selectedSection?.id) return;
 
       try {
         const items = await getMenuItems(selectedSection.id);
-        setSelectedSection({ ...selectedSection, items });
+        setSelectedSection(prev => prev ? { ...prev, items } : null);
       } catch (err) {
         setError('Failed to load menu items');
         console.error('Error loading menu items:', err);
@@ -52,17 +59,19 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
   }, [selectedSection?.id]);
 
   const handleSectionChange = useCallback((section: MenuSection) => {
-    // Only update if selecting a different section
-    if (section.id !== selectedSection?.id) {
+    if (section.name !== selectedSection?.name) {
       setSelectedSection(section);
+      setSelectedSectionName(section.name);
     }
-  }, [selectedSection?.id]);
+  }, [selectedSection?.name]);
 
   return (
     <MenuContext.Provider value={{ 
       sections, 
       selectedSection, 
+      selectedSectionName,
       setSelectedSection: handleSectionChange,
+      setSelectedSectionName,
       loading, 
       error 
     }}>

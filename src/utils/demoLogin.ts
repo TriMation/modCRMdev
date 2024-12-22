@@ -2,7 +2,9 @@ import { supabase } from '../config/supabase';
 
 export const DEMO_CREDENTIALS = {
   email: 'demo@modcrm.com',
-  password: 'demo123!@#'
+  password: 'demo123!@#',
+  first_name: 'Demo',
+  last_name: 'User'
 };
 
 export async function loginAsDemo() {
@@ -13,6 +15,7 @@ export async function loginAsDemo() {
     });
 
     if (error) throw error;
+
     return data.user;
   } catch (error) {
     console.error('Demo login error:', error);

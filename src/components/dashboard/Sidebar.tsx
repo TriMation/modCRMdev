@@ -1,85 +1,72 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { useSidebar } from '../../contexts/SidebarContext';
-import { useMenu } from '../../contexts/MenuContext';
-import { Settings, ChevronLeft, ChevronRight } from 'lucide-react';
-import { SidebarLogo } from './SidebarLogo';
-import { SidebarDropdown } from './SidebarDropdown';
-import { SidebarMenu } from './SidebarMenu';
 import { Link } from 'react-router-dom';
+import * as Icons from 'lucide-react';
+import { MenuItem } from '../../types/menu';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
-export function Sidebar() {
-  const location = useLocation();
-  const { isCollapsed, toggleSidebar } = useSidebar();
-  const { sections, selectedSection, setSelectedSection, loading, error } = useMenu();
+interface SidebarMenuProps {
+  items: MenuItem[];
+  currentPath: string;
+  isCollapsed: boolean;
+}
 
-  if (loading) {
+export function SidebarMenu({ items, currentPath, isCollapsed }: SidebarMenuProps) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Set default selection to dashboard on mount
+    if (currentPath === '/dashboard') {
+      const dashboardItem = items.find(item => item.path === '/dashboard');
+      if (dashboardItem) {
+        navigate(dashboardItem.path);
+      }
+    }
+  }, [items]);
+
+  const renderMenuItem = (item: MenuItem) => {
+    const Icon = item.icon ? Icons[item.icon as keyof typeof Icons] || Icons.Circle : Icons.Circle;
+    const isActive = currentPath === item.path;
+    
+    // Don't render Settings menu item as it's now handled separately
+    if (item.path === '/dashboard/settings') {
+      return null;
+    }
+
     return (
-      <div className="bg-emerald-50 dark:bg-gray-800 p-4">
-        <div className="animate-pulse">Loading menu...</div>
+      <Link
+        key={item.id}
+        to={item.path}
+        className={`flex items-center ${
+          isCollapsed ? 'justify-center' : 'space-x-2'
+        } px-4 py-2 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-gray-700 transition-colors ${
+          isActive ? 'bg-emerald-100 dark:bg-gray-700' : ''
+        }`}
+      >
+        <Icon className="w-5 h-5" />
+        {!isCollapsed && <span>{item.name}</span>}
+      </Link>
+    );
+  };
+
+  const renderSubMenu = (item: MenuItem) => {
+    if (!item.children?.length) {
+      return renderMenuItem(item);
+    }
+
+    return (
+      <div key={item.id} className="space-y-1">
+        {renderMenuItem(item)}
+        <div className={`${isCollapsed ? 'pl-0' : 'pl-4'} space-y-1`}>
+          {item.children.map(child => renderMenuItem(child))}
+        </div>
       </div>
     );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-emerald-50 dark:bg-gray-800 p-4">
-        <div className="text-red-600">{error}</div>
-      </div>
-    );
-  }
+  };
 
   return (
-    <div className={`flex flex-col bg-emerald-50 dark:bg-gray-800 border-r border-emerald-100 dark:border-gray-700 transition-all duration-300 ${
-      isCollapsed ? 'w-20' : 'w-64'
-    }`}>
-      <div className="flex-1 p-4 relative">
-        <div className="flex items-center justify-between mb-6">
-          <SidebarLogo />
-          <button
-            onClick={toggleSidebar}
-            className="p-2 rounded-lg hover:bg-emerald-100 dark:hover:bg-gray-700 text-emerald-600 dark:text-emerald-400 transition-colors"
-            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="w-4 h-4" />
-            ) : (
-              <ChevronLeft className="w-4 h-4" />
-            )}
-          </button>
-        </div>
-        
-        {!isCollapsed && selectedSection && (
-          <div className="mb-4">
-            <SidebarDropdown 
-              sections={sections}
-              selectedSection={selectedSection}
-              onSectionChange={setSelectedSection}
-            />
-          </div>
-        )}
-
-        {selectedSection && selectedSection.items && (
-          <SidebarMenu
-            items={selectedSection.items}
-            currentPath={location.pathname}
-            isCollapsed={isCollapsed}
-          />
-        )}
-      </div>
-      <div className="p-4 border-t border-emerald-100 dark:border-gray-700">
-        <Link
-          to="/dashboard/settings"
-          className={`flex items-center ${
-            isCollapsed ? 'justify-center' : 'space-x-2'
-          } px-4 py-2 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-gray-700 transition-colors ${
-            location.pathname === '/dashboard/settings' ? 'bg-emerald-100 dark:bg-gray-700' : ''
-          }`}
-        >
-          <Settings className="w-5 h-5" />
-          {!isCollapsed && <span>Settings</span>}
-        </Link>
-      </div>
-    </div>
+    <nav className="space-y-2">
+      {items.map(item => renderSubMenu(item))}
+    </nav>
   );
 }
